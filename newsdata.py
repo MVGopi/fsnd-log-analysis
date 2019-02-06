@@ -1,29 +1,25 @@
+#importing postgresql database adapter
 import psycopg2
-#importing for Proper date format
+#datetime module for printing date properly
 from datetime import datetime
-
-
-# What are the most popular three articles of all time?
-title1 = ("What are the most popular three articles of all time?")
-query_1 = (
+#Most popular three articles of all time query
+popular_artiles_query = (
     "select articles.title, count(*) as views "
     "from articles inner join log on log.path "
     "like concat('%', articles.slug, '%') "
     "where log.status like '%200%' group by "
     "articles.title, log.path order by views desc limit 3")
 
-# Who are the most popular article authors of all time?
-title2 = ("Who are the most popular article authors of all time?")
-query_2 = (
+#Most popular article authors of all time query
+popular_authors_query = (
     "select authors.name, count(*) as views from articles inner "
     "join authors on articles.author = authors.id inner join log "
     "on log.path like concat('%', articles.slug, '%') where "
     "log.status like '%200%' group "
     "by authors.name order by views desc")
 
-# On which days did more than 1% of requests lead to errors
-title3 = ("On which days did more than 1% of requests lead to errors?")
-query_3 = (
+#Days on which more than 1% of requests lead to errors query
+errors_days_query = (
     "select day, perc from ("
     "select day, round((sum(requests)/(select count(*) from log where "
     "substring(cast(log.time as text), 0, 11) = day) * 100), 2) as "
@@ -32,50 +28,50 @@ query_3 = (
     "as log_percentage group by day order by perc desc) as final_query "
     "where perc >= 1")
 
-
-def connect(database_name="news"):
-    """Connect or check database connection"""
+#postgresql database connection
+def database_connection(db_name="news"):
+    """Postgresql database connection from python"""
     try:
-        db = psycopg2.connect("dbname={}".format(database_name))
-        cursor = db.cursor()
-        return db, cursor
+        connetion_obj = psycopg2.connect("dbname={}".format(db_name))
+        cursor_obj = db.cursor()
+        return connetion_obj,cursor_obj
     except:
-        print ("Unable to connect to the database")
+        print ("Failed to connect {} database".format(db_news))
+#displaying output
+def retrive_results(Query):
+    """Retrives data based on given query from postgresql database"""
+    connection_obj,cursor_obj = database_connection()
+    cursor_obj.execute(Query)
+    return cursor_obj.fetchall()
+    connection_obj.close()
 
 
-def get_query_results(query):
-    #Return results
-    db, cursor = connect()
-    cursor.execute(query)
-    return cursor.fetchall()
-    db.close()
+def display_results(results):
+    """Displays the data retrived based on queries executed"""
+    print (results[1])
+    for i,r in enumerate(results[0]):
+        print ("\t"+str(i+1)+"."+str(r[0])+" - "+str(r[1])+" views")
 
 
-def print_query_results(query_results):
-    print (query_results[1])
-    for index, results in enumerate(query_results[0]):
-        print ("\t"+str(index+1)+"."+str(results[0])+" - "+str(results[1])+" views")
-
-
-def print_error_results(query_results):
-    print (query_results[1])
-    for results in query_results[0]:
-        d= results[0]
-        date_obj = datetime.strptime(d, "%Y-%m-%d")
-        formatted_date = datetime.strftime(date_obj, "%B %d, %Y")        
-        print ("\t"+str(formatted_date)+" - "+str(results[1]) + "% errors")
+def display_error_results(results):
+    print (results[1])
+    for r in results[0]:
+        D= results[0]
+        date_obj = datetime.strptime(D, "%Y-%m-%d")
+        date_formatted = datetime.strftime(date_obj, "%B %d, %Y")        
+        print ("\t"+str(date_formatted)+" - "+str(results[1]) + "% errors")
 
 
 if __name__ == '__main__':
-    # get results
-    popular_articles = get_query_results(query_1), title1
-    popular_authors = get_query_results(query_2), title2
-    error_days = get_query_results(query_3), title3
+    #retriving results
+    articles = retrive_results(popular_articles_query)
+    authors = retrive_results(popular_authors_query)
+    errors = retrive_results(errors_days_query)
 
-    # print results
-    print_query_results(popular_articles)
-    print_query_results(popular_authors)
-    print_error_results(error_days)
+    #display results
+    display_results(articles)
+    display_results(authors)
+    display_error_results(days)
     f=open('newsdata.txt','w')
-    f.write(str(popular_articles)+"\n"+"\n"+str(popular_authors)+"\n"+"\n"+str(error_days))
+    f.write("Most popular articles"+"\n"+str(articles)+"\n"+"\n"+"Most popular authors"+"\n"+str(authors)+"\n"+"\n"+"Days on whih more than 1% requests lead to errors"+"\n"+str(errors))
     f.close()
