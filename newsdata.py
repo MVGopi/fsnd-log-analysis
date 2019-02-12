@@ -3,7 +3,7 @@ import psycopg2
 #datetime module for printing date properly
 from datetime import datetime
 #Most popular three articles of all time query
-popular_artiles_query = (
+popular_articles_query = (
     "select articles.title, count(*) as views "
     "from articles inner join log on log.path "
     "like concat('%', articles.slug, '%') "
