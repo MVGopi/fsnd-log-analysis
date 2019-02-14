@@ -1,78 +1,88 @@
+# !/usr/bin/env python3
+
 #importing postgresql database adapter
 import psycopg2
-#datetime module for printing date properly
-from datetime import datetime
 
-
-#Most popular three articles of all time query
-popular_articles_query = (
-    "select articles.title, count(*) as views "
-    "from articles inner join log on log.path "
-    "like concat('%', articles.slug, '%') "
-    "where log.status like '%200%' group by "
-    "articles.title, log.path order by views desc limit 3")
-#Most popular article authors of all time query
-popular_authors_query = (
-    "select authors.name, count(*) as views from articles inner "
-    "join authors on articles.author = authors.id inner join log "
-    "on log.path like concat('%', articles.slug, '%') where "
-    "log.status like '%200%' group "
-    "by authors.name order by views desc")
-#Days on which more than 1% of requests lead to errors query
-errors_days_query = (
-    "select day, perc from ("
-    "select day, round((sum(requests)/(select count(*) from log where "
-    "substring(cast(log.time as text), 0, 11) = day) * 100), 2) as "
-    "perc from (select substring(cast(log.time as text), 0, 11) as day, "
-    "count(*) as requests from log where status like '%404%' group by day)"
-    "as log_percentage group by day order by perc desc) as final_query "
-    "where perc >= 1")
-#postgresql database connection
+# connection to our database
 def database_connection(db_name="news"):
-    """Method for conneting to postgresql database"""
+    """Instance for connecting to postgresql database"""
     try:
-        connection_obj = psycopg2.connect("dbname={}".format(db_name))
-        cursor_obj = connection_obj.cursor()
-        return connection_obj, cursor_obj
+        conn_obj=psycopg2.connect("dbname={}".format(db_name))
+        return conn_obj
     except:
-        print ("Failed to connect {} database".format(db_name))
+        print("Failed  to connect {} database".foramt(db_name))
 
-#retriving newsdata
-def retrive_results(Query):
-    """Retrives data based on given query from postgresql database"""
-    connection_obj, cursor_obj = database_connection()
-    cursor_obj.execute(Query)
-    return cursor_obj.fetchall()
-    connection_obj.close()
 
-#displaying newsdata
-def display_results(results,s):
-    """Displays the data retrived based on queries executed"""
-    print(s)
-    for i, r in enumerate(results[0]):
-        print (str(i+1)+"."+str(results[0])+" - "+str(results[1]))
+#Most popular articles of all time
+def most_popular_articles():
+    """Instance for finding most popular articles of all time"""
+    print('Most popular articles of all time'+'\n'+'---------------------------------')
+    conn_obj=database_connection()
+    cur_obj = conn_obj.cursor()
+    most_popular_articles_query = """SELECT articles.title, count(log.path) as\
+                    views FROM articles, log WHERE\
+                    log.path=('/article/' || articles.slug)\
+                    GROUP BY articles.title ORDER BY views desc limit 3"""
+    cur_obj.execute(most_popular_articles_query)
+    popular_articles = cur_obj.fetchall()
+    for articles in popular_articles:
+        print ('''"%s" __ %s views''' % (articles[0], articles[1]))
+    cur_obj.close()
 
-#displaying error days 
-def display_error_results(results,s):
-    print(s)
-    for r in results[0]:
-        d = r[0]
-        date = datetime.strptime(d, "%Y-%m-%d")
-        date_format = datetime.strftime(date, "%B %d, %Y")
-        print (str(date_format)+" - "+str(r[1]) + "% errors")
 
+#Most popualar authors
+def most_popular_authors():
+    """Instance for finding most popular authors of all time"""
+    print('\n'+'\n'+'Most popular authors of all time'+'\n'+'--------------------------------')
+    conn_obj=database_connection()
+    cur_obj = conn_obj.cursor()
+    most_popular_authors_query = """SELECT authors.name, count(log.path) as views FROM\
+                 articles, log, authors\
+                 WHERE log.path=('/article/'||articles.slug)\
+                 AND articles.author = authors.id \
+                 GROUP BY authors.name ORDER BY views desc"""
+    cur_obj.execute(most_popular_authors_query)
+    popular_authors = cur_obj.fetchall()
+    for authors in popular_authors:
+        print("%s __ %s views" % (authors[0], authors[1]))
+    cur_obj.close()
+
+
+#Days on which more than 1% requests lead to errors
+def errors_percent():
+    """Instance for days on which more than 1% requests leads to errors"""
+    print('\n'+'\n'+'Days did more than 1% of requests leads to errors'+'\n'+'-------------------------------------------------')
+    conn_obj=database_connection()
+    cur_obj = conn_obj.cursor()
+    retrive_errors_days_query = """ SELECT total.day,
+          ROUND(((errors.error_requests*1.0) / total.requests), 3) AS percent
+        FROM (
+          SELECT date_trunc('day', time) "day", count(*) AS error_requests
+          FROM log
+          WHERE status LIKE '404%'
+          GROUP BY day
+        ) AS errors
+        JOIN (
+          SELECT date_trunc('day', time) "day", count(*) AS requests
+          FROM log
+          GROUP BY day
+          ) AS total
+        ON total.day = errors.day
+        WHERE (ROUND(((errors.error_requests*1.0) / total.requests), 3) > 0.01)
+        ORDER BY percent DESC; """
+    cur_obj.execute(retrive_errors_days_query)
+    error_days = cur_obj.fetchall()
+    for day in error_days:
+        d = day[0].strftime('	%B %d, %Y')
+        e = str(round(day[1]*100, 1)) + "%" + "  errors"
+        print(d+ '__ '+e)
+    cur_obj.close()
+
+#closing database connection
+conn_obj=database_connection()
+conn_obj.close()
 
 if __name__ == '__main__':
-    #retrive results
-    articles = retrive_results(popular_articles_query)
-    authors = retrive_results(popular_authors_query)
-    errors = retrive_results(errors_days_query)
-
-    #display results
-    display_results(articles,"Most popular articles"+"\n"+"-----------------------")
-    display_results(authors,"Most popular authors"+"\n"+"------------------------")
-    display_error_results(errors,"Days on which more than 1% errors occured"+"\n"+"----------------------------------------------------")
-    #writing retrived newsdata report in to text file
-    f=open('newsdata.txt','w')
-    f.write("Most popular articles"+"\n"+str(articles)+"\n"+"\n"+"Most popular authors"+"\n"+str(authors)+"\n"+"\n"+"Days on whih more than 1% requests lead to errors"+"\n"+str(errors))
-    f.close()
+    most_popular_articles()
+    most_popular_authors()
+    errors_percent()
