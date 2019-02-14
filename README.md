@@ -1,8 +1,8 @@
 # fsnd-log-analysis
-# Project 3: Logs Analysis Project
+# Project: Logs Analysis Project
 ### by Mandoori Venkata Gopi
 
-Logs Analysis Project, part of the Udacity [Full Stack Web Developer
+Log Analysis Project, part of the Udacity [Full Stack Web Developer
 Nanodegree](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd004).
 
 ## What it is and does
@@ -44,7 +44,7 @@ There are some dependancies and a few instructions on how to run the application
 
 ## How to Run Project
 
-Download the project zip file to you computer and unzip the file then place inside `vagrant/logs-analysis`.
+Download the project zip file to you computer and unzip the file then place inside `vagrant/fsnd-log-analysis`.
 
   1. Launch the Vagrant VM inside Vagrant sub-directory in the downloaded fullstack-nanodegree-vm repository using command:
   
@@ -60,23 +60,17 @@ Download the project zip file to you computer and unzip the file then place insi
 
   4. Unzip this file after downloading it. The file inside is called newsdata.sql.
 
-  5. Copy the newsdata.sql file and place inside `vagrant/logs-analysis`.
+  5. Copy the newsdata.sql file and place inside `vagrant/fsnd-log-analysis`.
 
-  6. In terminal Change directory to `vagrant/logs-analysis` and look around with ls.
+  6. In terminal Change directory to `vagrant/fsnd-log-analysis` and look around with ls.
 
   7. Load the data in local database using the command:
 
   ```
     $ psql -d news -f newsdata.sql
   ```
-   8. Run newsdata.py using:
+   8. Run newsdata_analysis.py using:
   ```
-    $ python newsdata.py
+    $ python3 newsdata_analysis.py
   ```
   Note: queries will take sometime to execute 
-
-
-## Miscellaneous
-
-This README document is based on a template suggested by PhilipCoach in this
-Udacity forum [post](https://discussions.udacity.com/t/readme-files-in-project-1/23524).
