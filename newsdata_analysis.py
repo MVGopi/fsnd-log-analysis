@@ -4,35 +4,22 @@
 import psycopg2
 
 #Query for most popular articles
-most_popular_articles_query = """SELECT articles.title, count(log.path) as\
-                    views FROM articles, log WHERE\
-                    log.path=('/article/' || articles.slug)\
-                    GROUP BY articles.title ORDER BY views desc limit 3"""
+most_popular_articles_query = '''select  articles.title,count(log.path) as views from\
+                                articles,log where log.path=('/article/' || articles.slug)\
+                                group by articles.title order by views desc limit 4'''
 
 #Query for most popular authors
-most_popular_authors_query = """SELECT authors.name, count(log.path) as views FROM\
-                 articles, log, authors\
-                 WHERE log.path=('/article/'||articles.slug)\
-                 AND articles.author = authors.id \
-                 GROUP BY authors.name ORDER BY views desc"""
+most_popular_authors_query = '''select authors.name,count(log.path) as views from articles,log,authors\
+                                where log.path=('/article/' || articles.slug) and articles.author=\
+                                authors.id group by authors.name order by views desc'''
 
 #Query for finding error days
-retrive_errors_days_query = """ SELECT total.day,
-          ROUND(((errors.error_requests*1.0) / total.requests), 3) AS percent
-        FROM (
-          SELECT date_trunc('day', time) "day", count(*) AS error_requests
-          FROM log
-          WHERE status LIKE '404%'
-          GROUP BY day
-        ) AS errors
-        JOIN (
-          SELECT date_trunc('day', time) "day", count(*) AS requests
-          FROM log
-          GROUP BY day
-          ) AS total
-        ON total.day = errors.day
-        WHERE (ROUND(((errors.error_requests*1.0) / total.requests), 3) > 0.01)
-        ORDER BY percent DESC; """
+retrive_errors_days_query = '''select total.day,round(((errors.error_requests*1.0)/ total.requests),3) as percent from\
+                                (select date_trunc('day',time)"day",count(*) as error_requests from log\
+                                where status like '404%' group by day) as errors join(select date_trunc\
+                                ('day', time)"day", count(*) as requests from log group by day) as total\
+                                on total.day=errors.day where (round(((errors.error_requests*1.0)/total.requests),3)>0.01)\
+                                order by percent desc'''
 
 # connection to our database
 def database_connection(db_name="news"):
